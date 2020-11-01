@@ -15,37 +15,39 @@ you will get private key CA_key and public key CA_key.pub.
 
 
 2- Use CA authority private key to sign the server host public key 
-Copy Server host key /etc/ssh/ssh_host_rsa_key.pub to the CA authority host to sign it. Note that this is not a user
-ssh key, the ones in ~/.ssh/, rather this is the host key. This host keys are generated when openssh installed. 
+Copy the `server` host key `/etc/ssh/ssh_host_rsa_key.pub` to the CA authority host to sign it. 
+
+Note that this is not a user ssh key, the ones in `~/.ssh/`, rather this is the host key. This host keys are generated when openssh installed [see here](https://www.ssh.com/ssh/host-key). 
 
 ```
 ssh-keygen -h -s CA_key -n myserver -I mydataserver -V +52w ssh_host_rsa_key.pub
 ```
-options `-h` for signing host key, -s private key to be use for signing, -n is a comma-separated list of the domain 
-names by which the Server is accessed (in our case it is myserver). 
+Options `-h` for signing host key, `-s` private key to be use for signing, `-n` is a comma-separated list of the domain 
+names by which the Server is accessed (e.g. myserver). 
 
-you will get new file ssh_host_rsa_key-cert.pub.  copy this file and to the Server at /etc/ssh/ directory
+You will get new file ssh_host_rsa_key-cert.pub.  copy this file and to the Server at /etc/ssh/ directory
 
 3- Tell the Server to use the certificate. 
-add this line to /etc/ssh/sshd_config file. 
+add this line to `/etc/ssh/sshd_config` file. 
 ```
 HostCertificate /etc/ssh/ssh_host_rsa_key-cert.pub
 ```
 
 This line will tell the server to present this signed certificate for any client, so client should not ask the user
 to verify the signature of the server anymore as it does with ssh-key based. 
+
 Now restart the sshd 
 ```
 sudo systemctl restart ssh 
 ```
 
 4- Let clients trust the CA key. 
-Last step add CA public key to all client /etc/ssh/ssh_known_hosts file.  
+Last step add CA public key to all client `/etc/ssh/ssh_known_hosts` file.  
 ```
 @cert-authority <list of principals> <past the CA-key.pub content here>
 ```
 Note that the list of principals, should be the same as in step 2 (i.e. myserver in our case). 
-You can remove all non CA entry from user's ~/.ssh/known_hosts and /etc/ssh/ssh/ssh_known_hosts files, and only let clients trust the CA key. 
+You can remove all non CA entry from user's `~/.ssh/known_hosts` and `/etc/ssh/ssh/ssh_known_hosts` files, and only let clients trust the CA key. 
 
 5- congrates!
 Now you can ssh from the client to the server, and you should not need to verify the server signature. 
